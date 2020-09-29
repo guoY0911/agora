@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="renderer" content="webkit" />
+    <meta name="keywords" content="滚动条, scrollbar, 页面底部, 聊天窗口, " />
+<meta name="description" content="有些时候（如开发聊天程序），我们需要将将滚动条（scrollbar）保持在最底部，比如聊天窗口，最新发出和收到的信息要显示在最下方，如果要看到最下方的内容，就必须保证滚动条保持在最底部。" />
+    <link rel="stylesheet" type="text/css" href="./sass/index.css">
+    <script src="./js/jquery-1.9.1.min.js"></script>
+    <script src="./js/agora-rtm-sdk-1.3.1.js"></script>
+
+
+    <script src="./js/agora.js"></script>
+</head>
+<body>
+<header class="top-fix">
+    <div class="top-cent">
+        <div class="top-item tl"><a class="bigger"><img src="./images/back.png" ></a></div>
+        <div class="top-item tc">GUOshimao</div>
+        <div class="top-item tr"></div>
+    </div>
+</header>
+<div class="messageSSClass">
+    <ul class="messageUl">
+        <p>2020/9/14 14:49</p>
+        <li class="left_li">
+            <img class="touimg" src="./images/duihuan.png">
+            <div class="cententDiv">
+                <b>GUOshimao</b>
+                <div>
+                    你好在吗？
+                </div>
+            </div>
+        </li>
+        <li class="right_li">
+            <img class="touimg" src="./images/duihuan.png">
+            <div class="cententDiv">
+                <b>GUOshimao2</b>
+                <div>
+                    在的、有什么事情吗
+                </div>
+            </div>
+        </li>
+    </ul>
+    <div class="pushmessage">
+        <input type="text" id="message" />
+        <button id="pushbnt">发送</button>
+        <img src="./images/add.png" id="caidan">
+    </div>
+    <div class="fenleidis">
+        <ul class="fenleiUl">
+            <li>
+                <input type="file" accept="image/*" name="imgname" multiple id="upload_img">
+                <img src="./images/upimg.png">
+                <span>图片</span>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const userId = 'GUOshimao2';
+    const peerId = 'GUOshimao';
+    var parmasMessage = {
+        tou:'./images/duihuan.png',
+        userId:userId,
+        peerId:peerId,
+        text:null,
+        type:false,//true为自己 ，false为对方
+        is_time:false,
+        type_message: 'text',
+    }
+
+
+
+    //登录
+    login(userId).then(res =>{
+        console.log(res)
+
+        //订阅用户状态
+        getStatusUser(peerId).then(res =>{
+            console.log('订阅用户状态成功-',res)
+        }).catch(err =>{
+            console.log('订阅用户状态失败-',err)
+        })
+
+    }).catch(err =>{
+        console.log('登陆失败',err)
+    })
+
+    function userStatus(status){
+        console.log('订阅用户状态发生改变-',status)
+    }
+
+    // 发送消息
+    $("#pushbnt").click(function(){
+        console.log($('#message').val());
+        pushMessage(peerId,$('#message').val()).then(res =>{
+            parmasMessage.name = userId ;
+            parmasMessage.type = true ;
+            parmasMessage.text = $('#message').val() ;
+
+            var htmlstr = appendMessage(parmasMessage)
+            $(".messageUl").append(htmlstr)
+            $('#message').val('');
+        }).catch(err =>{
+            $('#message').val('');
+        })
+    })
+
+    // 发送图片
+    $("#upload_img").change(async function() {
+        console.log($(this)[0].files);
+        var filesarr = $(this)[0].files;
+
+        for (var key in filesarr) {
+            if(!filesarr[key].size)
+                return ;
+
+            
+            var blob = filesarr[key];
+            await pushMessageImage(blob).then(res =>{
+                console.log('图片消息发送成功',res)
+
+                parmasMessage.type_message = 'image'
+                parmasMessage.text = res.base64
+                parmasMessage.type = true
+                var htmlstr = appendMessage(parmasMessage)
+                $(".messageUl").append(htmlstr)
+            })
+        }
+        
+    })
+
+    //接收图片
+    function pullMessageImage(res){
+        console.log('接收图片',res)
+        
+        parmasMessage.type_message = 'image'
+        parmasMessage.text = res.dataurl
+        parmasMessage.type = false
+        var htmlstr = appendMessage(parmasMessage)
+        $(".messageUl").append(htmlstr)
+    }
+    //接收文件
+    function pullMessageFile(res){
+        console.log('接收文件',res)
+    }
+    //接收消息
+    function pullMessageText(res){
+        console.log('接收消息',res)
+        parmasMessage.text = res.text ;
+        parmasMessage.type = res.false ;
+
+        var htmlstr = appendMessage(parmasMessage)
+        $(".messageUl").append(htmlstr)
+    }
+
+    
+
+    function ConnectionStateChanged(res){
+        console.log('监听SDK状态回调',res)
+        if(res.status == 200){
+            parmasMessage.is_time = true ;
+        }
+    }
+</script>
+
+
+
+<script>
+    //89
+    const ulheight = $(window).height()-89;
+    var is_open = false;
+    $(function(){
+        $(".messageUl").css({"height":ulheight + 'px'});
+        $(".messageUl").scrollTop(ulheight);
+    })
+    $('#bigger').click(function(){
+        window.history.back(-1);
+    })
+    $("#caidan").click(function(){
+        $(".pushmessage").animate({bottom:'150px'});
+        $(".messageUl").css({"padding-bottom":'160px'});
+        $(".fenleidis").fadeIn();
+        $(".messageUl").scrollTop(ulheight);
+        setTimeout(()=>{
+            is_open = true;
+        },1500)
+    })
+    $(".messageUl").click(function(){
+        $(".pushmessage").animate({bottom:'0'});
+        $(".fenleidis").fadeOut();
+        $(".messageUl").css({"padding-bottom":'0'});
+    })
+    $('.messageUl').on('scroll',function(){
+        if(is_open){
+            is_open = false;
+            $(".messageUl").click();
+        }
+        //if ($('#div').scrollTop() >= (1000-200)) {
+        //    // 滚动到底部zhi了
+        //    alert('滚动到底部了');
+        //}
+});
+</script>
+
+<style type="text/css">
+    html{    background: #f1f2f4;}
+    body{height: 100%;}
+
+</style>
+
+
+</body>
+</html>

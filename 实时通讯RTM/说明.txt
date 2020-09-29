@@ -1,0 +1,7 @@
+此为实时消息demo。
+1.图片发送不能是跨域、请用谷歌浏览器设置防跨域、在谷歌浏览器运行。
+设置放跨域连接：https://www.cnblogs.com/linsx/p/9777954.html
+
+2.支持可发送图片、目前功能以支持xls表格发送 。在agora.js 这个方法 MessageFromPeer。
+
+3.语音聊天、及 视频聊天、demo我回尽快更新上去。
